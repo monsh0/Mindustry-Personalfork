@@ -1,0 +1,47 @@
+name: Build Mindustry
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Build desktop distribution
+        run: ./gradlew desktop:dist
+
+      - name: List build outputs
+        run: ls -la desktop/build/libs/
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mindustry-build
+          path: desktop/build/libs/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Build ${{ github.run_number }}
+          files: desktop/build/libs/*.jar
+          draft: false
+          prerelease: true
